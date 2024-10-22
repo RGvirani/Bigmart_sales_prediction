@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        form, .table-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            width: 90%;
+            max-width: 500px;
+            animation: slideInUp 1s ease-out;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input[type="text"], select, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, select:focus, input[type="file"]:focus {
+            border-color: #6c757d;
+        }
+        input[type="submit"] {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+        input[type="submit"]:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2em;
+            }
+            form, .table-container {
+                width: 100%;
+                padding: 20px;
+            }
+            input[type="submit"] {
+                width: 100%;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const forms = document.querySelectorAll("form");
+            forms.forEach(form => {
+                form.addEventListener("submit", function() {
+                    this.querySelector("input[type='submit']").value = "Processing...";
+                });
+            });
+
+            // Real-time validation
+            const fields = {
+                "Item_Weight": {
+                    regex: /^[0-9]*\.?[0-9]+$/,
+                    error: "Item Weight should be a continuous value (e.g., 5.4, 12.3)."
+                },
+                "Item_Visibility": {
+                    regex: /^(0(\.\d+)?|1(\.0+)?)$/,
+                    error: "Item Visibility should be from 0 to 1 (e.g., 0.15, 0.78)."
+                },
+                "Item_MRP": {
+                    regex: /^[0-9]*\.?[0-9]+$/,
+                    error: "Item MRP should be a continuous value (e.g., 100.5, 299.99)."
+                },
+                "O_Years": {
+                    regex: /^[0-9]+$/,
+                    error: "Outlet Years should be a number (e.g., 5, 10)."
+                },
+                "I_Fate_Content": {
+                    regex: /^(0|1)$/,
+                    error: "Item Fat Content should be 0 (low fat) or 1 (regular)."
+                },
+                "I_Type": {
+                    regex: /^(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15)$/,
+                    error: "Item Type should be a number between 0 and 15."
+                },
+                "O_Size": {
+                    regex: /^(0|1|2)$/,
+                    error: "Outlet Size should be 0 (High), 1 (Medium), or 2 (Small)."
+                },
+                "O_Location_Type": {
+                    regex: /^(0|1|2)$/,
+                    error: "Outlet Location Type should be 0 (Tier 1), 1 (Tier 2), or 2 (Tier 3)."
+                },
+                "O_Type": {
+                    regex: /^(0|1|2|3)$/,
+                    error: "Outlet Type should be 0 (Grocery Store), 1 (Supermarket Type1), 2 (Supermarket Type2), or 3 (Supermarket Type3)."
+                }
+            };
+
+            Object.keys(fields).forEach(field => {
+                document.getElementById(field).addEventListener("input", function() {
+                    const { regex, error } = fields[field];
+                    const errorElem = this.nextElementSibling;
+                    if (!regex.test(this.value)) {
+                        errorElem.textContent = error;
+                    } else {
+                        errorElem.textContent = "";
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Prediction App</h1>
+
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Select Model and Upload File for Prediction</h2>
+            </div>
+            <form action="/upload" method="post" enctype="multipart/form-data">
+                <label for="model">Select Model:</label>
+                <select id="model" name="model">
+                    <option value="linear">Linear Regression</option>
+                    <option value="random_forest">Random Forest</option>
+                    <option value="gradient_boosting">Gradient Boosting</option>
+                </select>
+                <input type="file" name="file" required>
+                <input type="submit" value="Upload">
+            </form>
+        </div>
+
+        <div class="form-container">
+            <div class="form-header">
+                <h2>Enter Single Record for Prediction</h2>
+            </div>
+            <form action="/predict" method="post">
+                <label for="model">Select Model:</label>
+                <select id="model" name="model">
+                    <option value="linear">Linear Regression</option>
+                    <option value="random_forest">Random Forest</option>
+                    <option value="gradient_boosting">Gradient Boosting</option>
+                </select>
+                <label for="Item_Weight">Item Weight:</label>
+                <input type="text" id="Item_Weight" name="Item_Weight" required>
+                <span class="error"></span>
+                <label for="Item_Visibility">Item Visibility:</label>
+                <input type="text" id="Item_Visibility" name="Item_Visibility" required>
+                <span class="error"></span>
+                <label for="Item_MRP">Item MRP:</label>
+                <input type="text" id="Item_MRP" name="Item_MRP" required>
+                <span class="error"></span>
+                <label for="O_Years">Outlet Years:</label>
+                <input type="text" id="O_Years" name="O_Years" required>
+                <span class="error"></span>
+                <label for="I_Fate_Content">Item Fat Content:</label>
+                <input type="text" id="I_Fate_Content" name="I_Fate_Content" required>
+                <span class="error"></span>
+                <label for="I_Type">Item Type:</label>
+                <input type="text" id="I_Type" name="I_Type" required>
+                <span class="error"></span>
+                <label for="O_Size">Outlet Size:</label>
+                <input type="text" id="O_Size" name="O_Size" required>
+                <span class="error"></span>
+                <label for="O_Location_Type">Outlet Location Type:</label>
+                <input type="text" id="O_Location_Type" name="O_Location_Type" required>
+                <label for="O_Type">Outlet Type:</label>
+                <input type="text" id="O_Type" name="O_Type" required>
+                <input type="submit" value="Predict">
+            </form>
+        </div>
+    </div>
+</body>
+</html>
